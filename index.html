@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>ESL/Major Style HUD - Hasan  Alp Güngör</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; width: 1920px; height: 1080px; overflow: hidden; font-family: 'Montserrat', sans-serif; background: transparent; }
+        :root { --esl-neon: #d4f600; --ct-blue: #5d7fb9; --t-yellow: #de9b35; --dark-bg: rgba(15, 15, 15, 0.9); --glass-bg: rgba(25, 25, 30, 0.85); --danger-red: #e74c3c; --money-green: #2ecc71; }
+
+        /* --- ÜST SKORBORD --- */
+        .top-bar { position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: flex; align-items: stretch; height: 70px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5)); }
+        .team-block { display: flex; align-items: center; background: var(--dark-bg); padding: 0 20px; width: 350px; position: relative; }
+        .team-left { clip-path: polygon(0 0, 100% 0, 100% 100%, 15px 100%); justify-content: flex-end; border-bottom: 3px solid var(--t-yellow); }
+        .team-right { clip-path: polygon(0 0, 100% 0, calc(100% - 15px) 100%, 0 100%); justify-content: flex-start; border-bottom: 3px solid var(--ct-blue); }
+        .team-name { font-size: 28px; font-weight: 900; color: white; letter-spacing: 1px; margin: 0 15px; }
+        .team-logo { height: 45px; object-fit: contain; }
+        .score-box { background: rgba(255,255,255,0.1); padding: 0 25px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .score { font-size: 40px; font-weight: 900; color: white; line-height: 1; }
+        
+        .center-timer { background: var(--glass-bg); backdrop-filter: blur(10px); width: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 3px solid var(--esl-neon); clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 100%, 0 100%); z-index: 10; margin: 0 -5px; }
+        .time { font-size: 32px; font-weight: 900; color: white; line-height: 1.1; }
+        .round { font-size: 12px; font-weight: 700; color: var(--esl-neon); letter-spacing: 2px; }
+
+        /* --- BOMBA TASARIMI --- */
+        #normal-timer-box { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
+        #bomb-timer-box { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
+        .bomb-icon { font-size: 26px; margin-bottom: 2px; }
+        .bomb-bar-bg { width: 90%; height: 8px; background: rgba(255,255,255,0.2); position: relative; clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+        .bomb-bar-fill { height: 100%; width: 100%; transition: width 0.1s linear, background 0.3s; }
+        .b-red { background: var(--danger-red); }
+        .b-white { background: #ffffff; box-shadow: 0 0 8px #ffffff;}
+
+        /* --- YAN TAKIM LİSTELERİ --- */
+        .side-players { position: absolute; top: 50%; transform: translateY(-50%); width: 350px; display: flex; flex-direction: column; gap: 8px; }
+        #t-side-players { left: 20px; }
+        #ct-side-players { right: 20px; }
+
+        .player-row { background: var(--glass-bg); backdrop-filter: blur(10px); padding: 10px 15px; display: flex; flex-direction: column; color: white; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); }
+        .t-row { border-left: 4px solid var(--t-yellow); clip-path: polygon(0 0, 100% 0, calc(100% - 15px) 100%, 0 100%); }
+        .ct-row { border-right: 4px solid var(--ct-blue); align-items: flex-end; clip-path: polygon(0 0, 100% 0, 100% 100%, 15px 100%); }
+
+        .p-top-row { display: flex; justify-content: space-between; align-items: baseline; width: 100%; margin-bottom: 2px; }
+        .ct-row .p-top-row { flex-direction: row-reverse; } 
+
+        .p-isim { font-size: 18px; font-weight: 900; text-transform: uppercase; }
+        .p-money { font-size: 16px; font-weight: 900; color: var(--money-green); }
+        .p-stats { font-size: 12px; font-weight: 700; color: #888; }
+        .p-bottom-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px; min-height: 22px; }
+        .ct-row .p-bottom-row { flex-direction: row-reverse; }
+
+        .p-weapon { font-size: 13px; font-weight: 700; color: #ccc; letter-spacing: 1px; display: flex; align-items: center; gap: 5px; }
+        .weapon-box { width: 60px; height: 22px; background-size: contain; background-repeat: no-repeat; background-position: left center; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); opacity: 0.95; display: inline-block; }
+        .ct-row .weapon-box { background-position: right center; }
+        .p-utility { display: flex; align-items: center; gap: 4px; height: 18px; }
+        .util-box { width: 18px; height: 18px; background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); opacity: 0.9; display: inline-block; }
+
+        .hp-container { display: flex; align-items: center; width: 100%; gap: 10px; }
+        .ct-row .hp-container { flex-direction: row-reverse; }
+        .p-hp-text { font-size: 14px; font-weight: 900; width: 30px; text-align: left; transition: color 0.3s; }
+        .ct-row .p-hp-text { text-align: right; }
+        .p-hp-bg { flex: 1; height: 8px; background: rgba(0,0,0,0.8); clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);}
+        .p-hp-fill { height: 100%; transition: width 0.3s ease-out, background 0.3s; }
+        .ct-row .p-hp-bg { clip-path: polygon(0 0, 100% 0, 100% 100%, 5px 100%); }
+        .ct-row .p-hp-fill { float: right; } 
+
+        /* --- AKTİF OYUNCU HUD (ALT ORTA) --- */
+        #active-player-hud {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 110px; background: var(--dark-bg);
+            display: none; align-items: center; padding: 0 30px;
+            border-bottom: 5px solid var(--esl-neon);
+            clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 100%, 0 100%);
+            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.8));
+            z-index: 20;
+        }
+        .active-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .active-name { font-size: 38px; font-weight: 900; color: white; text-transform: uppercase; line-height: 1; margin-bottom: 5px;}
+        .active-stats-text { font-size: 16px; font-weight: 700; color: #aaa; margin-left: 15px; }
+        .active-ammo { width: 180px; text-align: right; border-left: 2px solid rgba(255,255,255,0.1); padding-left: 20px; }
+        .ammo-label { font-size: 14px; font-weight: 700; color: #888; letter-spacing: 2px; }
+        .ammo-val { font-size: 45px; font-weight: 900; color: white; line-height: 1;}
+        .ammo-reserve { font-size: 20px; color: var(--esl-neon); }
+        .hp-zirt-active { display: flex; gap: 20px; align-items: center; }
+        .stat-item { font-size: 18px; font-weight: 900; color: white; }
+
+        /* --- KILLFEED --- */
+        #killfeed {
+            position: absolute; top: 85px; right: 20px; 
+            display: flex; flex-direction: column; gap: 6px; z-index: 50;
+            align-items: flex-end;
+        }
+        .kill-row {
+            background: rgba(15, 15, 15, 0.9); border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 12px; display: flex; align-items: center; gap: 12px;
+            border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            animation: slideIn 0.3s ease-out; transition: opacity 0.5s ease;
+        }
+        .k-isim { font-size: 15px; font-weight: 900; letter-spacing: 0.5px; }
+        .k-silah { height: 20px; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.8)); }
+        .text-t { color: var(--t-yellow); }
+        .text-ct { color: var(--ct-blue); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="killfeed"></div>
+
+    <div class="top-bar">
+        <div class="team-block team-left">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/4d/Faze_Clan.svg" class="team-logo" alt="FaZe">
+            <div class="team-name">FAZE</div>
+            <div class="score-box"><div class="score" id="score-left">0</div></div>
+        </div>
+
+        <div class="center-timer">
+            <div id="normal-timer-box">
+                <div class="time" id="zaman-text">--:--</div>
+                <div class="round" id="round-info">WARMUP</div>
+            </div>
+            <div id="bomb-timer-box">
+                <div class="bomb-icon" id="bomb-logo">💣</div>
+                <div class="bomb-bar-bg"><div class="bomb-bar-fill b-red" id="bomb-progress"></div></div>
+            </div>
+        </div>
+
+        <div class="team-block team-right">
+            <div class="score-box"><div class="score" id="score-right">0</div></div>
+            <div class="team-name">NAVI</div>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/NAVI-Logo.svg/1280px-NAVI-Logo.svg.png" class="team-logo" alt="NaVi">
+        </div>
+    </div>
+
+    <div id="t-side-players" class="side-players"></div>
+    <div id="ct-side-players" class="side-players"></div>
+
+    <div id="active-player-hud">
+        <div class="active-info">
+            <div id="active-p-name" class="active-name">OYUNCU ADI</div>
+            <div class="hp-zirt-active">
+                <div class="stat-item">❤️ <span id="active-p-hp">100</span></div>
+                <div class="stat-item">🛡️ <span id="active-p-zirt">100</span></div>
+                <div id="active-p-kda" class="active-stats-text">K: 0 | A: 0 | D: 0</div>
+            </div>
+        </div>
+        <div class="active-ammo">
+            <div class="ammo-label">AMMO</div>
+            <span id="active-p-ammo" class="ammo-val">0</span>
+            <span id="active-p-reserve" class="ammo-reserve">/ 0</span>
+        </div>
+    </div>
+
+    <script>
+    let isDefusing = false;
+    let maxDefuseTime = 10.0;
+    const iconBaseUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/csgo/pak01_dir/materials/panorama/images/icons/equipment/";
+
+    let oncekiOyuncular = {};
+
+    function addKillItem(killer, victim) {
+        const feed = document.getElementById('killfeed');
+        if(!feed) return;
+        const row = document.createElement('div');
+        row.className = 'kill-row';
+        
+        let kColor = killer.takim === 'T' ? 'text-t' : 'text-ct';
+        let vColor = victim.takim === 'T' ? 'text-t' : 'text-ct';
+        let wIsim = killer.silah ? killer.silah.toLowerCase() : "glock";
+
+        row.innerHTML = `
+            <div class="k-isim ${kColor}">${killer.isim}</div>
+            <img src="${iconBaseUrl}${wIsim}.svg" class="k-silah" onerror="this.style.display='none'">
+            <div class="k-isim ${vColor}">${victim.isim}</div>
+        `;
+        feed.appendChild(row);
+
+        setTimeout(() => {
+            row.style.opacity = "0";
+            setTimeout(() => row.remove(), 500);
+        }, 5000);
+    }
+
+    function updateTeamUI(teamData, containerId, teamType) {
+        const container = document.getElementById(containerId);
+        if(!container) return;
+
+        if (container.children.length !== teamData.length) {
+            let html = "";
+            teamData.forEach((p, index) => {
+                let rowClass = teamType === 'T' ? 't-row' : 'ct-row';
+                html += `
+                <div class="player-row ${rowClass}" id="player-${teamType}-${index}">
+                    <div class="p-top-row">
+                        <div class="p-isim" id="name-${teamType}-${index}"></div>
+                        <div class="p-money" id="money-${teamType}-${index}"></div>
+                    </div>
+                    <div class="p-bottom-row">
+                        <div class="p-weapon" id="weapon-${teamType}-${index}">
+                            <span class="weapon-box" id="weap-img-${teamType}-${index}"></span>
+                            <span id="weap-text-${teamType}-${index}"></span>
+                        </div>
+                        <div class="p-utility" id="util-${teamType}-${index}"></div>
+                        <div class="p-stats" id="stats-${teamType}-${index}"></div>
+                    </div>
+                    <div class="hp-container">
+                        <div class="p-hp-text" id="hptext-${teamType}-${index}"></div>
+                        <div class="p-hp-bg"><div class="p-hp-fill" id="hpbar-${teamType}-${index}"></div></div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        teamData.forEach((p, index) => {
+            const nameEl = document.getElementById(`name-${teamType}-${index}`);
+            const moneyEl = document.getElementById(`money-${teamType}-${index}`);
+            const statsEl = document.getElementById(`stats-${teamType}-${index}`);
+            const hpTextEl = document.getElementById(`hptext-${teamType}-${index}`);
+            const hpBarEl = document.getElementById(`hpbar-${teamType}-${index}`);
+            const weapImgEl = document.getElementById(`weap-img-${teamType}-${index}`);
+            const weapTextEl = document.getElementById(`weap-text-${teamType}-${index}`);
+            const utilEl = document.getElementById(`util-${teamType}-${index}`);
+
+            if(nameEl) {
+                if(nameEl.innerText !== p.isim) nameEl.innerText = p.isim;
+                if(moneyEl.innerText !== `$${p.para}`) moneyEl.innerText = `$${p.para}`;
+                
+                let statsText = `K: ${p.kill} D: ${p.olum}`;
+                if(statsEl.innerText !== statsText) statsEl.innerText = statsText;
+                if(hpTextEl.innerText !== String(p.hp)) hpTextEl.innerText = p.hp;
+
+                let newWidth = `${p.hp}%`;
+                if (hpBarEl.style.width !== newWidth) {
+                    hpBarEl.style.width = newWidth;
+                    let hpRenk = p.hp > 30 ? (teamType === 'T' ? "var(--t-yellow)" : "var(--ct-blue)") : "var(--danger-red)";
+                    hpBarEl.style.background = hpRenk;
+                    hpTextEl.style.color = p.hp === 0 ? "#555" : "white";
+                }
+
+                let silahIsmi = p.silah ? p.silah.toLowerCase() : "";
+                if (silahIsmi) {
+                    let bgUrl = `url('${iconBaseUrl}${silahIsmi}.svg')`;
+                    if (weapImgEl.style.backgroundImage !== bgUrl) {
+                        weapImgEl.style.backgroundImage = bgUrl;
+                        let img = new Image();
+                        img.onload = function() { weapTextEl.innerText = ""; } 
+                        img.onerror = function() { 
+                            weapImgEl.style.backgroundImage = "none"; 
+                            weapTextEl.innerText = p.silah.toUpperCase(); 
+                        }
+                        img.src = `${iconBaseUrl}${silahIsmi}.svg`;
+                    }
+                } else {
+                    weapImgEl.style.backgroundImage = "none";
+                    weapTextEl.innerText = "";
+                }
+
+                let expectedUtilHtml = p.bombalar ? p.bombalar.map(b => 
+                    `<span class="util-box" style="background-image: url('${iconBaseUrl}${b.toLowerCase()}.svg')"></span>`
+                ).join("") : "";
+                if(utilEl.innerHTML !== expectedUtilHtml) utilEl.innerHTML = expectedUtilHtml;
+            }
+        });
+    }
+
+    setInterval(() => {
+        fetch('http://127.0.0.1:3000/canli_veri')
+            .then(response => response.json())
+            .then(data => {
+                try {
+                    const scoreLeft = document.getElementById('score-left');
+                    const scoreRight = document.getElementById('score-right');
+                    const roundInfo = document.getElementById('round-info');
+
+                    if(scoreLeft && scoreLeft.innerText !== String(data.t_skor)) scoreLeft.innerText = data.t_skor || 0;
+                    if(scoreRight && scoreRight.innerText !== String(data.ct_skor)) scoreRight.innerText = data.ct_skor || 0;
+                    if(roundInfo && roundInfo.innerText !== `ROUND ${data.round}`) roundInfo.innerText = "ROUND " + (data.round || 0);
+
+                    let faz = data.faz || "";
+                    let sure = data.sure || 0.0;
+                    let bombaDurumu = data.bomba_durumu || "";
+
+                    let normalBox = document.getElementById('normal-timer-box');
+                    let bombBox = document.getElementById('bomb-timer-box');
+                    let progress = document.getElementById('bomb-progress');
+                    let logo = document.getElementById('bomb-logo');
+                    let zamanText = document.getElementById('zaman-text');
+
+                    if (faz === "live" || faz === "freezetime") {
+                        let dk = Math.floor(sure / 60);
+                        let sn = Math.floor(sure % 60).toString().padStart(2, '0');
+                        let newZaman = `${dk}:${sn}`;
+                        if(zamanText.innerText !== newZaman) zamanText.innerText = newZaman;
+                        zamanText.style.color = "white"; 
+                        if(normalBox.style.display !== "flex") { normalBox.style.display = "flex"; bombBox.style.display = "none"; }
+                        isDefusing = false;
+                    }
+                    else if (faz === "bomb") {
+                        if(normalBox.style.display !== "none") { normalBox.style.display = "none"; bombBox.style.display = "flex"; logo.innerText = "💣"; progress.className = "bomb-bar-fill b-red"; }
+                        progress.style.width = (sure / 40.0 * 100) + "%";
+                        isDefusing = false;
+                    } 
+                    else if (faz === "defuse") {
+                        if(normalBox.style.display !== "none") { normalBox.style.display = "none"; bombBox.style.display = "flex"; logo.innerText = "✂️"; progress.className = "bomb-bar-fill b-white"; }
+                        if (!isDefusing) { isDefusing = true; maxDefuseTime = (sure <= 5.5) ? 5.0 : 10.0; }
+                        progress.style.width = (sure / maxDefuseTime * 100) + "%";
+                    } 
+                    else {
+                        if(normalBox.style.display !== "flex") { normalBox.style.display = "flex"; bombBox.style.display = "none"; }
+                        isDefusing = false;
+                        if (bombaDurumu === "exploded" && zamanText.innerText !== "BOOM") { zamanText.innerText = "BOOM"; zamanText.style.color = "var(--danger-red)"; }
+                        else if (bombaDurumu === "defused" && zamanText.innerText !== "DEFUSED") { zamanText.innerText = "DEFUSED"; zamanText.style.color = "var(--ct-blue)"; }
+                    }
+
+                    // --- KİLLFEED (HAFıZA) ---
+                    let suankiOyuncular = {};
+                    let katiller = [];
+                    let kurbanlar = [];
+
+                    const takimIsle = (takimDizisi, takimTipi) => {
+                        takimDizisi.forEach(p => {
+                            suankiOyuncular[p.isim] = { kill: p.kill, olum: p.olum, silah: p.silah, takim: takimTipi };
+                            if (oncekiOyuncular[p.isim]) {
+                                if (p.kill > oncekiOyuncular[p.isim].kill) katiller.push({ isim: p.isim, silah: p.silah, takim: takimTipi });
+                                if (p.olum > oncekiOyuncular[p.isim].olum) kurbanlar.push({ isim: p.isim, takim: takimTipi });
+                            }
+                        });
+                    };
+
+                    if(data.t_takimi) { updateTeamUI(data.t_takimi, 't-side-players', 'T'); takimIsle(data.t_takimi, 'T'); }
+                    if(data.ct_takimi) { updateTeamUI(data.ct_takimi, 'ct-side-players', 'CT'); takimIsle(data.ct_takimi, 'CT'); }
+
+                    let islemSayisi = Math.max(katiller.length, kurbanlar.length);
+                    for(let i=0; i<islemSayisi; i++) {
+                        let k = katiller[i] || { isim: "BİLİNMEYEN", silah: "c4", takim: "T" };
+                        let v = kurbanlar[i] || { isim: "BİLİNMEYEN", takim: "CT" };
+                        addKillItem(k, v);
+                    }
+                    oncekiOyuncular = suankiOyuncular; 
+
+                    // --- AKTİF OYUNCU ---
+                    const activeHud = document.getElementById('active-player-hud');
+                    if (data.aktif_oyuncu && data.aktif_oyuncu.hp > 0) {
+                        if(activeHud.style.display !== "flex") activeHud.style.display = "flex";
+                        document.getElementById('active-p-name').innerText = data.aktif_oyuncu.isim;
+                        document.getElementById('active-p-hp').innerText = data.aktif_oyuncu.hp;
+                        document.getElementById('active-p-zirt').innerText = data.aktif_oyuncu.zirt;
+                        document.getElementById('active-p-ammo').innerText = data.aktif_oyuncu.mermi;
+                        document.getElementById('active-p-reserve').innerText = "/ " + data.aktif_oyuncu.mermi_yedek;
+                        document.getElementById('active-p-kda').innerText = `K: ${data.aktif_oyuncu.kill} | A: ${data.aktif_oyuncu.asist} | D: ${data.aktif_oyuncu.olum}`;
+                        let activeColor = data.aktif_oyuncu.takim === "T" ? "var(--t-yellow)" : "var(--ct-blue)";
+                        if(activeHud.style.borderBottomColor !== activeColor) activeHud.style.borderBottomColor = activeColor;
+                    } else {
+                        if(activeHud.style.display !== "none") activeHud.style.display = "none";
+                    }
+
+                } catch (e) {
+                    console.log("Arayuz islenirken ufak bir atlama yasandi:", e);
+                }
+            })
+            .catch(error => console.log("Sunucu bekleniyor..."));
+    }, 100); 
+    </script>
+</body>
+</html>
